@@ -39,3 +39,47 @@
 | role | VARCHAR(20) | Role within household | CHECK ('admin','member','viewer') |
 | joined_at | TIMESTAMPTZ | Membership timestamp | DEFAULT NOW() |
 | (household_id, user_id) | — | Prevent duplicate membership | UNIQUE |
+
+
+## Table: raw.accounts
+
+**Grain:**  
+1 row = 1 financial account owned by exactly one user.
+
+Accounts represent containers where money resides.  
+Examples include savings accounts, credit cards, cash wallets, and investment accounts.
+
+Accounts are **user-owned assets**. Household views aggregate accounts through the `household_members` relationship.
+
+| Column | Type | Description | Constraints |
+|------|------|-------------|-------------|
+| id | SERIAL | Surrogate primary key for account | PRIMARY KEY |
+| user_id | INT | Owner of the account | FK → raw.users(id) |
+| name | VARCHAR(100) | User-defined account name (e.g., "HDFC Savings") | NOT NULL |
+| account_type | VARCHAR(20) | Category of account | CHECK ('savings','credit','cash','loan','investment') |
+| created_at | TIMESTAMPTZ | Timestamp when account record was created | DEFAULT NOW() |
+
+### Constraints
+
+**Foreign Key**
+
+- `user_id` references `raw.users(id)`
+- Ensures every account belongs to a valid user.
+
+**Unique Constraint**
+Unique(user_id,name)
+
+Prevents a user from creating multiple accounts with the same name.
+
+Different users may have accounts with identical names.
+
+### Relationship Context
+users (1) ──── (many) accounts
+accounts (1) ──── (many) transactions [future]
+
+Household aggregation is computed through:
+
+household_members → users → accounts
+
+This allows personal accounts while supporting household-level reporting.
+
